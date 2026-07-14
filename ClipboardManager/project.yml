@@ -1,0 +1,157 @@
+name: ClipboardManager
+options:
+  bundleIdPrefix: com.hselbi
+  deploymentTarget:
+    macOS: "14.0"
+    iOS: "17.0"
+  xcodeVersion: "15.0"
+  generateEmptyDirectories: true
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    ENABLE_USER_SCRIPT_SANDBOXING: false
+    DEVELOPMENT_TEAM: ""
+
+configs:
+  Debug:
+    SWIFT_OPTIMIZATION_LEVEL: -Onone
+  Release:
+    SWIFT_OPTIMIZATION_LEVEL: -O
+
+targets:
+  # macOS App
+  ClipboardManager-macOS:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Shared
+        group: Shared
+      - path: macOS
+        excludes:
+          - "*.entitlements"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.hselbi.clipboardmanager
+        PRODUCT_NAME: ClipboardManager
+        INFOPLIST_FILE: macOS/Info.plist
+        CODE_SIGN_ENTITLEMENTS: macOS/ClipboardManager.entitlements
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
+        LD_RUNPATH_SEARCH_PATHS: "@executable_path/../Frameworks"
+        COMBINE_HIDPI_IMAGES: true
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    entitlements:
+      path: macOS/ClipboardManager.entitlements
+
+  # iOS App
+  ClipboardManager-iOS:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Shared
+        group: Shared
+      - path: iOS
+        excludes:
+          - "*.entitlements"
+          - KeyboardExtension
+          - ShareExtension
+          - WidgetExtension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.hselbi.clipboardmanager
+        PRODUCT_NAME: ClipboardManager
+        INFOPLIST_FILE: iOS/Info.plist
+        CODE_SIGN_ENTITLEMENTS: iOS/ClipboardManager.entitlements
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: true
+    entitlements:
+      path: iOS/ClipboardManager.entitlements
+    dependencies:
+      - target: ClipboardKeyboard
+        embed: true
+      - target: ClipboardShare
+        embed: true
+      - target: ClipboardWidget
+        embed: true
+
+  # Keyboard Extension
+  ClipboardKeyboard:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: iOS/KeyboardExtension
+      - path: Shared/Models/AppSettings.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.hselbi.clipboardmanager.keyboard
+        PRODUCT_NAME: ClipboardKeyboard
+        INFOPLIST_FILE: iOS/KeyboardExtension/Info.plist
+        CODE_SIGN_ENTITLEMENTS: iOS/KeyboardExtension/ClipboardKeyboard.entitlements
+        SKIP_INSTALL: true
+
+  # Share Extension
+  ClipboardShare:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: iOS/ShareExtension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.hselbi.clipboardmanager.share
+        PRODUCT_NAME: ClipboardShare
+        INFOPLIST_FILE: iOS/ShareExtension/Info.plist
+        CODE_SIGN_ENTITLEMENTS: iOS/ShareExtension/ClipboardShare.entitlements
+        SKIP_INSTALL: true
+
+  # Widget Extension
+  ClipboardWidget:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: iOS/WidgetExtension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.hselbi.clipboardmanager.widget
+        PRODUCT_NAME: ClipboardWidget
+        INFOPLIST_FILE: iOS/WidgetExtension/Info.plist
+        CODE_SIGN_ENTITLEMENTS: iOS/WidgetExtension/ClipboardWidget.entitlements
+        SKIP_INSTALL: true
+
+schemes:
+  ClipboardManager-macOS:
+    build:
+      targets:
+        ClipboardManager-macOS: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+
+  ClipboardManager-iOS:
+    build:
+      targets:
+        ClipboardManager-iOS: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release

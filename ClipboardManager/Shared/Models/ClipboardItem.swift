@@ -1,11 +1,17 @@
 import Foundation
 import SwiftData
 import UniformTypeIdentifiers
+#if os(macOS)
+import AppKit
+import IOKit
+#else
+import UIKit
+#endif
 
 // MARK: - Clipboard Content Types
 
 /// Represents different types of clipboard content
-enum ClipboardContentType: String, Codable, CaseIterable {
+enum ClipboardContentType: String, Codable, CaseIterable, Sendable {
     case plainText = "public.utf8-plain-text"
     case rtf = "public.rtf"
     case html = "public.html"
@@ -47,6 +53,19 @@ enum ClipboardContentType: String, Codable, CaseIterable {
         case .url: return .url
         case .color: return nil
         case .unknown: return nil
+        }
+    }
+
+    var systemImageName: String {
+        switch self {
+        case .plainText: return "text.alignleft"
+        case .rtf, .html: return "text.badge.star"
+        case .image, .png, .tiff, .jpeg: return "photo"
+        case .pdf: return "doc.richtext"
+        case .fileURL: return "folder"
+        case .url: return "link"
+        case .color: return "paintpalette"
+        case .unknown: return "questionmark.square"
         }
     }
 }
@@ -150,6 +169,11 @@ final class ClipboardItem {
         return "[Unknown Content]"
     }
 
+    /// Full text without truncation
+    var fullText: String {
+        text ?? fileURL?.absoluteString ?? "[No text content]"
+    }
+
     /// Preview text for search
     var searchableText: String {
         var components: [String] = []
@@ -176,6 +200,11 @@ final class ClipboardItem {
         size += rtfData?.count ?? 0
         size += htmlContent?.utf8.count ?? 0
         return size
+    }
+
+    /// Formatted size string
+    var formattedSize: String {
+        ByteCountFormatter.string(fromByteCount: Int64(contentSize), countStyle: .file)
     }
 
     // MARK: - Initialization
@@ -273,21 +302,26 @@ struct DeviceIdentifier {
 
     #if os(macOS)
     private static func getMacDeviceID() -> String {
-        // Use hardware UUID on macOS
         let platformExpert = IOServiceGetMatchingService(
             kIOMainPortDefault,
             IOServiceMatching("IOPlatformExpertDevice")
         )
 
+        guard platformExpert != 0 else {
+            return "mac-unknown"
+        }
+
         defer { IOObjectRelease(platformExpert) }
 
-        if let serialNumber = IORegistryEntryCreateCFProperty(
+        if let serialNumberAsCFString = IORegistryEntryCreateCFProperty(
             platformExpert,
             kIOPlatformUUIDKey as CFString,
             kCFAllocatorDefault,
             0
-        )?.takeUnretainedValue() as? String {
-            return "mac-\(serialNumber)"
+        ) {
+            if let serialNumber = serialNumberAsCFString.takeUnretainedValue() as? String {
+                return "mac-\(serialNumber)"
+            }
         }
 
         return "mac-unknown"
@@ -323,3 +357,7 @@ extension ClipboardItem {
         }
     }
 }
+
+// MARK: - Identifiable
+
+extension ClipboardItem: Identifiable { }
