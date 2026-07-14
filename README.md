@@ -1,6 +1,10 @@
-# Clipboard Manager
+# ClipboardManager
 
-A cross-platform clipboard manager for macOS, iOS, and iPadOS with iCloud sync.
+A cross-platform clipboard manager for macOS, iOS, and iPadOS with iCloud sync. Inspired by [Maccy](https://github.com/p0deje/Maccy).
+
+![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20iOS%20%7C%20iPadOS-blue)
+![Swift](https://img.shields.io/badge/swift-5.9-orange)
+![License](https://img.shields.io/badge/license-MIT-green)
 
 ## Features
 
@@ -24,11 +28,50 @@ A cross-platform clipboard manager for macOS, iOS, and iPadOS with iCloud sync.
 - **Shortcuts Integration** - Automate clipboard operations with Siri Shortcuts
 
 ### Security Features
-- **Sensitive Content Detection** - Automatically detect and flag credit cards, SSNs, API keys, etc.
+- **Sensitive Content Detection** - Automatically detect and flag credit cards, SSNs, API keys
 - **Auto-Delete Sensitive Items** - Optionally auto-delete sensitive content after a set time
 - **Encryption** - Encrypt stored clipboard data with AES-256-GCM
 - **Biometric Lock** - Protect the app with Face ID / Touch ID
 - **Password Manager Exclusion** - Ignore concealed clipboard content from password managers
+
+## Quick Start
+
+### Prerequisites
+- macOS 14.0+ (Sonoma) for macOS app
+- iOS 17.0+ for iOS app
+- Xcode 15.0+
+- [XcodeGen](https://github.com/yonaskolb/XcodeGen) (installed automatically)
+
+### Build from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/hselbi/ClipboardManager.git
+cd ClipboardManager/ClipboardManager
+
+# Install XcodeGen and generate Xcode project
+make setup
+make generate
+
+# Open in Xcode
+make open
+```
+
+### Build Commands
+
+```bash
+# Build macOS app
+make build-macos
+
+# Build iOS app (Simulator)
+make build-ios
+
+# Clean build artifacts
+make clean
+
+# See all commands
+make help
+```
 
 ## Project Structure
 
@@ -36,159 +79,99 @@ A cross-platform clipboard manager for macOS, iOS, and iPadOS with iCloud sync.
 ClipboardManager/
 ├── Shared/                          # Shared code for all platforms
 │   ├── Models/
-│   │   ├── ClipboardItem.swift      # Main data model
+│   │   ├── ClipboardItem.swift      # Main data model (SwiftData)
 │   │   └── AppSettings.swift        # Settings and preferences
-│   └── Services/
-│       ├── DataStore.swift          # SwiftData persistence layer
-│       └── SecurityManager.swift    # Encryption and security
+│   ├── Services/
+│   │   ├── DataStore.swift          # SwiftData persistence + iCloud
+│   │   └── SecurityManager.swift    # Encryption and biometrics
+│   └── Assets.xcassets/             # Shared assets
 │
 ├── macOS/                           # macOS-specific code
-│   ├── ClipboardManagerApp.swift    # App entry point
+│   ├── ClipboardManagerApp.swift    # App entry point + settings UI
 │   ├── Views/
-│   │   └── MenuBarView.swift        # Menu bar UI
+│   │   └── MenuBarView.swift        # Menu bar popup UI
 │   ├── Services/
-│   │   ├── ClipboardMonitor.swift   # Clipboard monitoring
+│   │   ├── ClipboardMonitor.swift   # Clipboard polling
 │   │   └── HotkeyManager.swift      # Global hotkey handling
-│   ├── Info.plist
-│   └── ClipboardManager.entitlements
+│   └── Info.plist + Entitlements
 │
 ├── iOS/                             # iOS/iPadOS-specific code
-│   ├── ClipboardManageriOSApp.swift # App entry point
+│   ├── ClipboardManageriOSApp.swift # iOS app entry point
 │   ├── Views/
 │   │   └── ClipboardListView.swift  # Main list UI
 │   ├── Services/
-│   │   └── iOSClipboardHandler.swift # iOS clipboard handling
+│   │   └── iOSClipboardHandler.swift
 │   ├── KeyboardExtension/           # Custom keyboard
-│   │   ├── KeyboardViewController.swift
-│   │   └── Info.plist
-│   ├── Info.plist
-│   └── ClipboardManager.entitlements
+│   ├── ShareExtension/              # Share sheet integration
+│   ├── WidgetExtension/             # Home screen widgets
+│   └── Info.plist + Entitlements
 │
+├── project.yml                      # XcodeGen configuration
+├── Makefile                         # Build automation
 └── README.md
 ```
 
-## Requirements
+## Configuration
 
-- **macOS**: macOS 14.0 (Sonoma) or later
-- **iOS/iPadOS**: iOS 17.0 or later
-- **Xcode**: 15.0 or later
-- **Swift**: 5.9 or later
+### Xcode Setup
 
-## Setup Instructions
+1. **Generate Project**: Run `make generate` to create `ClipboardManager.xcodeproj`
 
-### 1. Create Xcode Project
+2. **Signing**: In Xcode, select your development team for all targets:
+   - ClipboardManager-macOS
+   - ClipboardManager-iOS
+   - ClipboardKeyboard
+   - ClipboardShare
+   - ClipboardWidget
 
-1. Open Xcode and create a new project
-2. Select "Multiplatform" > "App"
-3. Name it "ClipboardManager"
-4. Choose SwiftUI for the interface
-5. Enable "Use SwiftData"
+3. **Capabilities**: Enable these capabilities (already configured in entitlements):
+   - **iCloud** (CloudKit) - for sync
+   - **App Groups** - for extensions (`group.com.hselbi.clipboardmanager`)
+   - **Keychain Sharing** - for secure storage
 
-### 2. Add Source Files
+4. **Bundle IDs**: Update bundle IDs if needed:
+   - macOS: `com.hselbi.clipboardmanager`
+   - iOS: `com.hselbi.clipboardmanager`
+   - Keyboard: `com.hselbi.clipboardmanager.keyboard`
+   - Share: `com.hselbi.clipboardmanager.share`
+   - Widget: `com.hselbi.clipboardmanager.widget`
 
-Copy all the Swift files from this repository into your Xcode project:
-- Add `Shared/` files to both macOS and iOS targets
-- Add `macOS/` files to the macOS target only
-- Add `iOS/` files to the iOS target only
+### App Settings
 
-### 3. Configure Targets
+| Setting | Description | Default |
+|---------|-------------|---------|
+| Max History Size | Number of items to keep | 200 |
+| iCloud Sync | Sync across devices | On |
+| Auto-Paste | Paste after selection | Off |
+| Password Detection | Ignore password managers | On |
+| Clear on Quit | Delete history on exit | Off |
+| Global Hotkey | Keyboard shortcut | ⇧⌘V |
 
-#### macOS Target
-1. Set deployment target to macOS 14.0
-2. Add `Info.plist` content
-3. Add entitlements file
-4. Enable "App Sandbox" in Signing & Capabilities
-5. Add "iCloud" capability with CloudKit
-6. Add "Accessibility" capability (for auto-paste)
-
-#### iOS Target
-1. Set deployment target to iOS 17.0
-2. Add `Info.plist` content
-3. Add entitlements file
-4. Add "iCloud" capability with CloudKit
-5. Add "App Groups" capability with `group.com.clipboard.manager`
-6. Add "Keychain Sharing" capability
-
-#### Keyboard Extension Target
-1. Create new target: File > New > Target > Keyboard Extension
-2. Name it "ClipboardKeyboard"
-3. Add `KeyboardViewController.swift`
-4. Add `Info.plist` content
-5. Add "App Groups" capability with same group identifier
-
-### 4. Configure iCloud
-
-1. Sign in to your Apple Developer account
-2. Enable CloudKit for your App ID
-3. Create a CloudKit container: `iCloud.com.clipboard.manager`
-4. Add the container to all targets
-
-### 5. Build and Run
-
-```bash
-# Build for macOS
-xcodebuild -scheme ClipboardManager -destination 'platform=macOS' build
-
-# Build for iOS
-xcodebuild -scheme ClipboardManager -destination 'platform=iOS Simulator,name=iPhone 15' build
-```
-
-## Usage
-
-### macOS
-
-1. Launch the app - it appears in the menu bar
-2. Press **Shift+Cmd+V** to open clipboard history
-3. Type to search, press Enter to paste
-4. Use **Opt+Enter** to paste without formatting
-5. Use **Opt+P** to pin/unpin items
-
-### iOS/iPadOS
-
-1. Launch the app to view clipboard history
-2. Pull down to refresh and capture current clipboard
-3. Tap an item to view details
-4. Swipe left to delete or pin
-5. Enable the keyboard extension in Settings > General > Keyboard
-
-### Keyboard Shortcuts (macOS)
+## Keyboard Shortcuts (macOS)
 
 | Shortcut | Action |
 |----------|--------|
-| Shift+Cmd+V | Open clipboard history |
-| Enter | Copy and paste selected item |
-| Opt+Enter | Paste without formatting |
-| Opt+P | Toggle pin |
-| Opt+Delete | Delete item |
-| Cmd+1-9 | Quick paste pinned items |
-| Up/Down | Navigate items |
-| Esc | Close |
+| ⇧⌘V | Open clipboard history |
+| ↵ | Copy and paste selected item |
+| ⌥↵ | Paste without formatting |
+| ⌥P | Toggle pin |
+| ⌥⌫ | Delete item |
+| ⌘1-9 | Quick paste pinned items |
+| ↑↓ | Navigate items |
+| ⎋ | Close |
 
-## Configuration
+## Edge Cases Handled
 
-### Settings
-
-Access settings from the menu bar icon (macOS) or Settings tab (iOS):
-
-- **Max History Size**: 10-999 items
-- **iCloud Sync**: Enable/disable sync between devices
-- **Auto-Paste**: Paste immediately after selection
-- **Ignore Duplicates**: Skip consecutive duplicate copies
-- **Password Manager Detection**: Ignore secure clipboard content
-- **Clear on Quit**: Delete history when app closes
-
-### Ignored Apps (macOS)
-
-Add bundle IDs to ignore specific applications:
-- `com.1password.1password`
-- `com.bitwarden.desktop`
-- Custom apps by bundle ID
-
-### Ignored Patterns
-
-Add regex patterns to ignore specific content:
-- Credit cards: `\b\d{16}\b`
-- Passwords: `password\s*[:=]\s*\S+`
+| Edge Case | Solution |
+|-----------|----------|
+| Password managers | Detects concealed pasteboard types (1Password, Bitwarden, etc.) |
+| Large content | Configurable size limits, image compression |
+| Duplicates | Consecutive & global duplicate detection |
+| Sensitive data | Auto-detects credit cards, SSNs, API keys, private keys |
+| iOS privacy | Respects iOS 14+ paste notifications, iOS 16+ permissions |
+| Memory | Efficient polling, external storage for images |
+| Sync failures | Graceful iCloud error handling |
+| Background | Proper lifecycle handling on both platforms |
 
 ## Privacy & Security
 
@@ -197,27 +180,21 @@ Add regex patterns to ignore specific content:
 - **No Analytics**: No data collection or tracking
 - **Open Source**: Full transparency of code
 
-## Edge Cases Handled
+## Contributing
 
-1. **Large Content**: Configurable size limits for images and text
-2. **Password Managers**: Detects and ignores concealed pasteboard types
-3. **Duplicates**: Consecutive and global duplicate detection
-4. **Sensitive Content**: Auto-detection of credit cards, SSNs, API keys
-5. **Memory Management**: Efficient handling of large history
-6. **Concurrent Access**: Thread-safe clipboard monitoring
-7. **App Lifecycle**: Proper handling of background/foreground transitions
-8. **iOS Privacy**: Respects iOS clipboard permission requirements
-9. **Network Failures**: Graceful handling of iCloud sync issues
-10. **Data Migration**: Supports future schema migrations
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-MIT License - see LICENSE file for details.
-
-## Contributing
-
-Contributions are welcome! Please read our contributing guidelines before submitting PRs.
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
-Inspired by [Maccy](https://github.com/p0deje/Maccy) - a great clipboard manager for macOS.
+- Inspired by [Maccy](https://github.com/p0deje/Maccy) - an excellent clipboard manager for macOS
+- Built with SwiftUI, SwiftData, and CloudKit
