@@ -5,25 +5,25 @@
     <!-- iCloud -->
     <key>com.apple.developer.icloud-container-identifiers</key>
     <array>
-        <string>iCloud.com.clipboard.manager</string>
+        <string>iCloud.com.hselbi.clipboardmanager</string>
     </array>
     <key>com.apple.developer.icloud-services</key>
     <array>
         <string>CloudKit</string>
     </array>
     <key>com.apple.developer.ubiquity-kvstore-identifier</key>
-    <string>$(TeamIdentifierPrefix)com.clipboard.manager</string>
+    <string>$(TeamIdentifierPrefix)com.hselbi.clipboardmanager</string>
 
-    <!-- App Groups (for keyboard extension) -->
+    <!-- App Groups (for extensions) -->
     <key>com.apple.security.application-groups</key>
     <array>
-        <string>group.com.clipboard.manager</string>
+        <string>group.com.hselbi.clipboardmanager</string>
     </array>
 
     <!-- Keychain access groups -->
     <key>keychain-access-groups</key>
     <array>
-        <string>$(AppIdentifierPrefix)com.clipboard.manager</string>
+        <string>$(AppIdentifierPrefix)com.hselbi.clipboardmanager</string>
     </array>
 </dict>
 </plist>

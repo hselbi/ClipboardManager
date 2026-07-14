@@ -8,7 +8,7 @@ class KeyboardViewController: UIInputViewController {
 
     private var hostingController: UIHostingController<KeyboardView>?
     private let clipboardHandler: KeyboardClipboardHandler
-    private let appGroupIdentifier = "group.com.clipboard.manager"
+    private let appGroupIdentifier = "group.com.hselbi.clipboardmanager"
 
     // MARK: - Initialization
 
@@ -32,14 +32,11 @@ class KeyboardViewController: UIInputViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
         setupKeyboardView()
     }
 
     override func viewWillLayoutSubviews() {
         super.viewWillLayoutSubviews()
-
-        // Update hosting controller frame
         hostingController?.view.frame = view.bounds
     }
 
@@ -49,13 +46,13 @@ class KeyboardViewController: UIInputViewController {
         let keyboardView = KeyboardView(
             clipboardHandler: clipboardHandler,
             onItemSelected: { [weak self] text in
-                self?.insertText(text)
+                self?.textDocumentProxy.insertText(text)
             },
             onNextKeyboard: { [weak self] in
                 self?.advanceToNextInputMode()
             },
             onBackspace: { [weak self] in
-                self?.deleteBackward()
+                self?.textDocumentProxy.deleteBackward()
             },
             hasFullAccess: hasFullAccess
         )
@@ -77,16 +74,6 @@ class KeyboardViewController: UIInputViewController {
 
         self.hostingController = hostingController
     }
-
-    // MARK: - Input
-
-    private func insertText(_ text: String) {
-        textDocumentProxy.insertText(text)
-    }
-
-    private func deleteBackward() {
-        textDocumentProxy.deleteBackward()
-    }
 }
 
 // MARK: - Keyboard View
@@ -99,7 +86,6 @@ struct KeyboardView: View {
     let hasFullAccess: Bool
 
     @State private var items: [SharedClipboardItem] = []
-    @State private var showingFullKeyboard = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -208,8 +194,6 @@ struct KeyboardView: View {
     private func pasteFromClipboard() {
         if let string = UIPasteboard.general.string {
             onItemSelected(string)
-
-            // Save to history
             clipboardHandler.addItem(text: string)
             loadItems()
         }
@@ -236,52 +220,65 @@ struct ClipboardChip: View {
     }
 }
 
-// MARK: - Full Keyboard View
+// MARK: - Shared Clipboard Item (for keyboard)
 
-struct FullKeyboardView: View {
-    let clipboardHandler: KeyboardClipboardHandler
-    let onItemSelected: (String) -> Void
-    let onDismiss: () -> Void
+struct SharedClipboardItem: Codable, Identifiable {
+    let id: String
+    let text: String
+    let copiedAt: Date
 
-    @State private var items: [SharedClipboardItem] = []
-    @State private var searchText = ""
-
-    var body: some View {
-        NavigationView {
-            List {
-                ForEach(filteredItems) { item in
-                    Button(action: { onItemSelected(item.text) }) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(item.text)
-                                .lineLimit(2)
-                                .font(.body)
-
-                            Text(item.copiedAt.formatted(.relative(presentation: .abbreviated)))
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .searchable(text: $searchText)
-            .navigationTitle("Clipboard History")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done", action: onDismiss)
-                }
-            }
+    var displayText: String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.count > 30 {
+            return String(trimmed.prefix(30)) + "..."
         }
-        .onAppear {
-            items = clipboardHandler.getRecentItems()
-        }
+        return trimmed
+    }
+}
+
+// MARK: - Keyboard Clipboard Handler
+
+final class KeyboardClipboardHandler {
+    private let settings: AppSettings
+    private let sharedDefaults: UserDefaults?
+
+    init(settings: AppSettings, appGroupIdentifier: String) {
+        self.settings = settings
+        self.sharedDefaults = UserDefaults(suiteName: appGroupIdentifier)
     }
 
-    private var filteredItems: [SharedClipboardItem] {
-        if searchText.isEmpty {
-            return items
+    func getRecentItems() -> [SharedClipboardItem] {
+        guard let data = sharedDefaults?.data(forKey: "sharedClipboardItems"),
+              let items = try? JSONDecoder().decode([SharedClipboardItem].self, from: data) else {
+            return []
         }
-        return items.filter { $0.text.localizedCaseInsensitiveContains(searchText) }
+        return Array(items.prefix(20))
     }
+
+    func addItem(text: String) {
+        var items = getRecentItems()
+
+        let newItem = SharedClipboardItem(
+            id: UUID().uuidString,
+            text: text,
+            copiedAt: Date()
+        )
+
+        items.removeAll { $0.text == text }
+        items.insert(newItem, at: 0)
+
+        if items.count > 50 {
+            items = Array(items.prefix(50))
+        }
+
+        guard let data = try? JSONEncoder().encode(items) else { return }
+        sharedDefaults?.set(data, forKey: "sharedClipboardItems")
+    }
+}
+
+// MARK: - Minimal AppSettings for Keyboard
+
+class AppSettings: ObservableObject {
+    // Minimal settings needed for keyboard extension
+    init() {}
 }
