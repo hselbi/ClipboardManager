@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- App Sandbox -->
+    <key>com.apple.security.app-sandbox</key>
+    <true/>
+
+    <!-- Hardened Runtime -->
+    <key>com.apple.security.hardened-runtime</key>
+    <true/>
+
+    <!-- iCloud -->
+    <key>com.apple.developer.icloud-container-identifiers</key>
+    <array>
+        <string>iCloud.com.clipboard.manager</string>
+    </array>
+    <key>com.apple.developer.icloud-services</key>
+    <array>
+        <string>CloudKit</string>
+    </array>
+    <key>com.apple.developer.ubiquity-kvstore-identifier</key>
+    <string>$(TeamIdentifierPrefix)com.clipboard.manager</string>
+
+    <!-- Accessibility for auto-paste -->
+    <key>com.apple.security.temporary-exception.apple-events</key>
+    <array>
+        <string>com.apple.systemevents</string>
+    </array>
+
+    <!-- Automation -->
+    <key>com.apple.security.automation.apple-events</key>
+    <true/>
+
+    <!-- Network (for iCloud sync) -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+
+    <!-- File access for saved images -->
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+
+    <!-- Keychain access groups -->
+    <key>keychain-access-groups</key>
+    <array>
+        <string>$(AppIdentifierPrefix)com.clipboard.manager</string>
+    </array>
+</dict>
+</plist>
